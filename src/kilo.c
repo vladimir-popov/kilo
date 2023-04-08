@@ -4,13 +4,14 @@
 
 #include "dstr.c"
 #include "terminal.c"
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
 
 /*********************** variables ***********************/
 
-#define KILO_VERSION "0.0.1"
+#define KILO_VERSION "0.0.2"
 #define KILO_TAB_STOP 8
 
 typedef struct erow
@@ -393,6 +394,12 @@ restore_termios ()
     die ("tcsetattr");
 }
 
+static void
+term_resize (int sig)
+{
+  refresh_screen ();
+}
+
 void
 init_editor (void)
 {
@@ -411,6 +418,13 @@ init_editor (void)
 
   /* Set hook to restore the original terminal options */
   atexit (restore_termios);
+
+  /* set up terminal resize callback */
+  struct sigaction sig;
+  sig.sa_handler = term_resize;
+  sigemptyset (&sig.sa_mask);
+  sig.sa_flags = SA_RESTART;
+  sigaction (SIGWINCH, &sig, NULL);
 }
 
 int
